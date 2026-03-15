@@ -67,7 +67,6 @@ async def tasas(update, context):
             f"💰 *Tasas del mercado informal (CUP):*\n\n"
             f"🇺🇸 USD: {datos.get('usd', 'N/A')}\n"
             f"🇪🇺 EUR: {datos.get('eur', 'N/A')}\n"
-            f"💳 MLC: {datos.get('mlc', 'N/A')}\n"
             f"🇲🇽 MXN: {datos.get('mxn', 'N/A')}\n"
             f"🇨🇦 CAD: {datos.get('cad', 'N/A')}"
         )
@@ -76,15 +75,6 @@ async def tasas(update, context):
         await update.message.reply_text("❌ No pude obtener las tasas en este momento. Intenta más tarde.")
 
 # --- INICIO DEL BOT ---
-if __name__ == '__main__':
-    TOKEN = os.environ.get("TOKEN")
-    app = ApplicationBuilder().token(TOKEN).build()
-    
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("tasas", tasas))
-    
-    print("Bot en marcha...")
-    app.run_polling()
 
 
 if __name__ == '__main__':
