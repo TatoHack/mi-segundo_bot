@@ -87,3 +87,23 @@ if __name__ == '__main__':
     app.run_polling()
 
 
+if __name__ == '__main__':
+    TOKEN = os.environ.get("TOKEN")
+    # Usa Webhooks en lugar de Polling
+    app = ApplicationBuilder().token(TOKEN).build()
+    
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("tasas", tasas))
+    
+    # Render asigna el puerto automáticamente
+    PORT = int(os.environ.get("PORT", 8080))
+    
+    # Esto le dice a Telegram a dónde enviar los mensajes
+    # Asegúrate de poner tu URL real de Render aquí
+    URL_RENDER = "https://mi-segundo-bot.onrender.com"
+    
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        webhook_url=f"{URL_RENDER}/",
+    )
