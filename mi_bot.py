@@ -1,19 +1,24 @@
 import os
-import logging
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+import threading
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from telegram.ext import ApplicationBuilder, CommandHandler
 
-# Esto toma el TOKEN de las variables de entorno del servidor (Render)
+# Función para que Render no se queje por el puerto
+def run_dummy_server():
+    server = HTTPServer(('0.0.0.0', int(os.environ.get("PORT", 8080))), SimpleHTTPRequestHandler)
+    server.serve_forever()
+
+# Iniciamos el servidor en segundo plano
+threading.Thread(target=run_dummy_server, daemon=True).start()
+
+# --- AQUÍ VA EL RESTO DE TU CÓDIGO DEL BOT ---
 TOKEN = os.environ.get("TOKEN")
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('¡Hola! El bot está funcionando de forma segura.')
+async def start(update, context):
+    await update.message.reply_text('¡El bot está vivo y funcionando!')
 
 if __name__ == '__main__':
-    # Usamos el token que viene de la configuración
     app = ApplicationBuilder().token(TOKEN).build()
-    
     app.add_handler(CommandHandler("start", start))
-    
-    print("Bot en marcha...")
     app.run_polling()
+
