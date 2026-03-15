@@ -33,6 +33,28 @@ def obtener_tasas():
         return None
     return None
 
+def obtener_tasas():
+    ahora = time.time()
+    if cache_tasas["datos"] and (ahora - cache_tasas["ultima_actualizacion"] < 3600):
+        return cache_tasas["datos"]
+
+    url = "https://exchange-rate-api-delta.vercel.app/api/v2/formal/source/cup.json"
+    try:
+        # Añadimos headers para parecer un navegador real
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        respuesta = requests.get(url, headers=headers, timeout=15)
+        
+        if respuesta.status_code == 200:
+            datos = respuesta.json()
+            cache_tasas["datos"] = datos
+            cache_tasas["ultima_actualizacion"] = ahora
+            return datos
+        else:
+            print(f"Error HTTP: {respuesta.status_code}") # Esto aparecerá en los logs
+            return None
+    except Exception as e:
+        print(f"Error de conexión: {e}") # Esto es lo que necesitamos ver
+        return None
 # --- COMANDOS DEL BOT ---
 async def start(update, context):
     await update.message.reply_text('¡Hola! Soy tu bot financiero. Usa /tasas para ver los precios actuales.')
