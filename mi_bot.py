@@ -5,12 +5,6 @@ import time
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from telegram.ext import ApplicationBuilder, CommandHandler
 
-# --- CONFIGURACIÓN DEL SERVIDOR DUMMY (PARA RENDER) ---
-def run_dummy_server():
-    server = HTTPServer(('0.0.0.0', int(os.environ.get("PORT", 8080))), SimpleHTTPRequestHandler)
-    server.serve_forever()
-
-threading.Thread(target=run_dummy_server, daemon=True).start()
 
 # --- CACHÉ PARA TASAS ---
 cache_tasas = {"datos": None, "ultima_actualizacion": 0}
