@@ -11,44 +11,32 @@ cache_tasas = {"datos": None, "ultima_actualizacion": 0}
 
 def obtener_tasas():
     ahora = time.time()
-    # Si la caché tiene menos de 1 hora (3600 segundos), devolvemos la caché
     if cache_tasas["datos"] and (ahora - cache_tasas["ultima_actualizacion"] < 3600):
         return cache_tasas["datos"]
 
-    url = "https://exchange-rate-api-delta.vercel.app/api/v2/formal/source/cup.json"
-    try:
-        respuesta = requests.get(url, timeout=10)
-        if respuesta.status_code == 200:
-            datos = respuesta.json()
-            cache_tasas["datos"] = datos
-            cache_tasas["ultima_actualizacion"] = ahora
-            return datos
-    except Exception:
-        return None
+    # Intentaremos con una URL alternativa más directa si la otra falla
+    urls = [
+        "https://exchange-rate-api-delta.vercel.app/api/v2/formal/source/cup.json",
+        "https://api.exchangerate-api.com/v4/latest/USD" # Fuente de respaldo global
+    ]
+    
+    for url in urls:
+        try:
+            print(f"Intentando conectar a: {url}")
+            respuesta = requests.get(url, timeout=15)
+            if respuesta.status_code == 200:
+                datos = respuesta.json()
+                cache_tasas["datos"] = datos
+                cache_tasas["ultima_actualizacion"] = ahora
+                print("¡Conexión exitosa!")
+                return datos
+        except Exception as e:
+            print(f"Fallo en {url}: {e}")
+    
     return None
 
-def obtener_tasas():
-    ahora = time.time()
-    if cache_tasas["datos"] and (ahora - cache_tasas["ultima_actualizacion"] < 3600):
-        return cache_tasas["datos"]
 
-    url = "https://exchange-rate-api-delta.vercel.app/api/v2/formal/source/cup.json"
-    try:
-        # Añadimos headers para parecer un navegador real
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        respuesta = requests.get(url, headers=headers, timeout=15)
-        
-        if respuesta.status_code == 200:
-            datos = respuesta.json()
-            cache_tasas["datos"] = datos
-            cache_tasas["ultima_actualizacion"] = ahora
-            return datos
-        else:
-            print(f"Error HTTP: {respuesta.status_code}") # Esto aparecerá en los logs
-            return None
-    except Exception as e:
-        print(f"Error de conexión: {e}") # Esto es lo que necesitamos ver
-        return None
+
 # --- COMANDOS DEL BOT ---
 async def start(update, context):
     await update.message.reply_text('¡Hola! Soy tu bot financiero. Usa /tasas para ver los precios actuales.')
