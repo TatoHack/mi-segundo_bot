@@ -9,31 +9,49 @@ from telegram.ext import ApplicationBuilder, CommandHandler
 # --- CACHÉ PARA TASAS ---
 cache_tasas = {"datos": None, "ultima_actualizacion": 0}
 
+# 1. FUNCIÓN QUE BUSCA LOS DATOS (Lógica)
 def obtener_tasas():
     ahora = time.time()
     if cache_tasas["datos"] and (ahora - cache_tasas["ultima_actualizacion"] < 3600):
         return cache_tasas["datos"]
 
-    # Intentaremos con una URL alternativa más directa si la otra falla
     urls = [
         "https://exchange-rate-api-delta.vercel.app/api/v2/formal/source/cup.json",
-        "https://api.exchangerate-api.com/v4/latest/USD" # Fuente de respaldo global
+        "https://open.er-api.com/v6/latest/USD"
     ]
     
     for url in urls:
         try:
-            print(f"Intentando conectar a: {url}")
-            respuesta = requests.get(url, timeout=15)
+            respuesta = requests.get(url, timeout=10)
             if respuesta.status_code == 200:
-                datos = respuesta.json()
-                cache_tasas["datos"] = datos
+                cache_tasas["datos"] = respuesta.json()
                 cache_tasas["ultima_actualizacion"] = ahora
-                print("¡Conexión exitosa!")
-                return datos
-        except Exception as e:
-            print(f"Fallo en {url}: {e}")
-    
+                return cache_tasas["datos"]
+        except:
+            continue
     return None
+
+# 2. FUNCIÓN QUE RESPONDE AL USUARIO (Comando)
+async def tasas(update, context):
+    datos = obtener_tasas()
+    if datos:
+        # Buscamos en el formato de la API 1 (minúsculas) o API 2 (MAYÚSCULAS)
+        usd = datos.get('usd') or datos.get('rates', {}).get('USD', 'N/A')
+        eur = datos.get('eur') or datos.get('rates', {}).get('EUR', 'N/A')
+        mlc = datos.get('mlc', '---')
+        mxn = datos.get('mxn') or datos.get('rates', {}).get('MXN', 'N/A')
+
+        mensaje = (
+            f"💰 *Tasas actualizadas:*\n\n"
+            f"🇺🇸 USD: {usd}\n"
+            f"🇪🇺 EUR: {eur}\n"
+            f"💳 MLC: {mlc}\n"
+            f"🇲🇽 MXN: {mxn}"
+        )
+        await update.message.reply_text(mensaje, parse_mode='Markdown')
+    else:
+        await update.message.reply_text("❌ Error de conexión con los servidores de tasas.")
+
 
 
 
@@ -41,20 +59,7 @@ def obtener_tasas():
 async def start(update, context):
     await update.message.reply_text('¡Hola! Soy tu bot financiero. Usa /tasas para ver los precios actuales.')
 
-async def tasas(update, context):
-    datos = obtener_tasas()
-    if datos:
-        # Formato de respuesta (asegúrate de que los nombres de los campos coincidan con la API)
-        mensaje = (
-            f"💰 *Tasas del mercado informal (CUP):*\n\n"
-            f"🇺🇸 USD: {datos.get('usd', 'N/A')}\n"
-            f"🇪🇺 EUR: {datos.get('eur', 'N/A')}\n"
-            f"🇲🇽 MXN: {datos.get('mxn', 'N/A')}\n"
-            f"🇨🇦 CAD: {datos.get('cad', 'N/A')}"
-        )
-        await update.message.reply_text(mensaje, parse_mode='Markdown')
-    else:
-        await update.message.reply_text("❌ No pude obtener las tasas en este momento. Intenta más tarde.")
+
 
 # --- INICIO DEL BOT ---
 
