@@ -32,7 +32,8 @@ def obtener_tasas():
             continue
     return None
 
-async def tasas(update, context):
+
+async def tasas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     datos = obtener_tasas()
     if datos:
         # Buscamos 'usd' (API de Cuba) o 'USD' dentro de 'rates' (API Global)
@@ -57,9 +58,37 @@ async def tasas(update, context):
 
 
 # --- COMANDOS DEL BOT ---
-async def start(update, context):
-    await update.message.reply_text('¡Hola! Soy tu bot financiero. Usa /tasas para ver los precios actuales.')
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("¡Hola! Soy tu bot financiero.\n\n"
+                                    " Usa /tasas para ver los precios actuales o /ayuda para ver que mas puedo hacer")
 
+async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    mensaje = (
+        "🤖 *Menú de Ayuda - Cassi Bot*\n\n"
+        "✨ *Comandos disponibles:*\n"
+        "➡️ /tasas - Muestra el cambio de USD, EUR, MLC y MXN.\n"
+        "➡️ /convertir <monto> <moneda> - Convierte a CUP (ej: /convertir 100 USD).\n"
+        "➡️ /info - Información sobre la fuente de datos.\n"
+        "➡️ /ayuda - Muestra este mensaje."
+    )
+    await update.message.reply_text(mensaje, parse_mode='Markdown')
+
+async def convertir(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        # El comando espera: /convertir 100 USD
+        monto = float(context.args[0])
+        moneda = context.args[1].lower()
+        
+        datos = obtener_tasas()
+        tasa = datos.get(moneda) or datos.get('rates', {}).get(moneda.upper())
+        
+        if tasa and tasa != 'N/A':
+            resultado = monto * float(tasa)
+            await update.message.reply_text(f"💵 *{monto} {moneda.upper()}* equivalen a *{resultado:,.2f} CUP*")
+        else:
+            await update.message.reply_text("❌ Moneda no soportada o tasa no disponible.")
+    except (IndexError, ValueError):
+        await update.message.reply_text("⚠️ Uso correcto: `/convertir 100 USD`", parse_mode='Markdown')
 
 
 # --- INICIO DEL BOT ---
@@ -72,7 +101,9 @@ if __name__ == '__main__':
     
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("tasas", tasas))
-    
+    app.add_handler(CommandHandler("ayuda", ayuda))
+    app.add_handler(CommandHandler("info", ayuda))
+    app.add_handler(CommandHandler("convertir", convertir))
     # Render asigna el puerto automáticamente
     PORT = int(os.environ.get("PORT", 8080))
     
